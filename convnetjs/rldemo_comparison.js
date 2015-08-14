@@ -649,6 +649,7 @@ var config = {
         // FIXME: Age stops increasing when not learning, spams log.
         if (this.brain.age % 50 === 0) {
          console.log(
+           ' p:'+this.brain.behavior_policy,
            ' a:'+this.actionix,
            //'/'+this.repeat_cnt,
            ' =:'+reward.toFixed(5),
