@@ -168,14 +168,14 @@ var config = {
       this.walls.pop();
 
       // set up food and poison
-      this.items = []
-      for(var k=0;k<30;k++) {
-        var x = convnetjs.randf(20, this.W-20);
-        var y = convnetjs.randf(20, this.H-20);
-        var t = convnetjs.randi(1, 3); // food or poison (1 and 2)
-        var it = new Item(x, y, t);
-        this.items.push(it);
-      }
+      this.items = [];
+
+      this.goal = new Item(
+          convnetjs.randf(20, this.W-20),
+          convnetjs.randf(20, this.H-20),
+          0
+      );
+      this.goal.rad = 15;
     }
 
     World.prototype = {
@@ -227,8 +227,8 @@ var config = {
         this.collpoints = [];
         for(var i=0,n=this.agents.length;i<n;i++) {
           var a = this.agents[i];
-          for(var ei=0,ne=a.eyes.length;ei<ne;ei++) {
-            var e = a.eyes[ei];
+          for(var ei=0,ne=a.sensors.eyes.length;ei<ne;ei++) {
+            var e = a.sensors.eyes[ei];
             // we have a line from p to p->eyep
             var eyep = new Vec(a.p.x + e.max_range * Math.sin(a.angle + e.angle),
                                a.p.y + e.max_range * Math.cos(a.angle + e.angle));
@@ -242,6 +242,42 @@ var config = {
               e.sensed_type = -1;
             }
           }
+
+          // Reset nostril sensors
+          resetSensors(a.sensors.nostrils);
+
+          // x/y reversed compared to Gazebo.
+          // Find nearest nostril and apply goal
+          //`tan(rad) = Opposite / Adjacent = (y2-y1)/(x2-x1)`
+          var srad = Math.atan2(this.goal.p.x - a.p.x, this.goal.p.y - a.p.y);
+          //`Hypotenuse = (y2-y1)/sin(rad)`
+          var sdis = Math.abs((this.goal.p.x - a.p.x)/Math.sin(srad));
+
+          var robot_r = a.angle;
+          if (robot_r > Math.PI) {
+             robot_r -= 2 * Math.PI;
+          } else if (robot_r < -Math.PI) {
+             robot_r += 2 * Math.PI;
+          }
+
+          // Minus robot pose from goal direction.
+          srad -= robot_r;
+          if (srad > Math.PI) {
+           srad -= 2 * Math.PI;
+          } else if (srad < -Math.PI) {
+           srad += 2 * Math.PI;
+          }
+          //console.log(robot_r.toFixed(3), srad.toFixed(3), sdis.toFixed(0));
+
+          var e = findByAngle(a.sensors.nostrils, srad);
+          if (e && sdis < e.max_range) {
+           // eye collided with wall
+           e.sensed_proximity = sdis;
+           e.sensed_type = this.goal.type;
+          }
+
+          // Record for rewarding later.
+          a.addGoal(0, sdis, srad);
         }
 
         // let the agents behave in the world based on their input
@@ -327,12 +363,23 @@ var config = {
           }
           this.items = nt; // swap
         }
+        /*
         if(this.items.length < 30 && this.clock % 10 === 0 && convnetjs.randf(0,1)<0.25) {
           var newitx = convnetjs.randf(20, this.W-20);
           var newity = convnetjs.randf(20, this.H-20);
           var newitt = convnetjs.randi(1, 3); // food or poison (1 and 2)
           var newit = new Item(newitx, newity, newitt);
           this.items.push(newit);
+        }
+        */
+
+        if(this.goal && this.clock % 500 === 0 && convnetjs.randf(0,1)<0.25) {
+          this.goal = new Item(
+              convnetjs.randf(20, this.W-20),
+              convnetjs.randf(20, this.H-20),
+              0
+          );
+          this.goal.rad = 15;
         }
 
         // agents are given the opportunity to learn based on feedback of their action on environment
@@ -612,8 +659,8 @@ var config = {
         ctx.stroke();
 
         // draw agents sight
-        for(var ei=0,ne=a.eyes.length;ei<ne;ei++) {
-          var e = a.eyes[ei];
+        for(var ei=0,ne=a.sensors.eyes.length;ei<ne;ei++) {
+          var e = a.sensors.eyes[ei];
           var sr = e.sensed_proximity;
           if(e.sensed_type === -1 || e.sensed_type === 0) {
             ctx.strokeStyle = "rgb(0,0,0)"; // wall or nothing
