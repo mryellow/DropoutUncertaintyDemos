@@ -556,6 +556,18 @@ var config = {
       this.prevactionix = -1;
     }
     Agent.prototype = {
+      /**
+       * Add RatSLAM goal to memory for later reward
+       * @method addGoal
+       * @param {integer} id
+       * @param {float} dis
+       * @param {float} rad
+       */
+      addGoal: function(id, dis, rad) {
+        // TODO: If Goal ID has changed, publish an "eat" reward?
+        // Does it only change when eaten? Not really, it changes when shortcut too.
+        this.goal = new Goal(id, dis, rad);
+      },
       forward: function() {
         // in forward pass the agent simply behaves in the environment
         // create input to brain
