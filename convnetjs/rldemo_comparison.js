@@ -6,8 +6,6 @@ for (var x=1; x<=31; x++) {
 }
 
 var config = {
-  main_loop: 30, // Hz
-  goal_distance: 20, // How many RatSLAM experiences ago to set goal?
   sensors: {
     eyes: {
       names: ['range_3l','range_2l','range_1l','range_0','range_1r','range_2r','range_3r'],
@@ -28,45 +26,7 @@ var config = {
     [0.5,1.0],
     [0.5,0.0],
     [0.0,0.5]
-  ],
-  brain_opts: {
-    temporal_window: 2,
-    //behavior_policy: 'thompson',
-    experience_size: 50000,
-    start_learn_threshold: 1000,
-    gamma: 0.7,
-    learning_steps_total: 2000000,
-    learning_steps_burnin: 3000,
-    epsilon_min: 0.05,
-    epsilon_test_time: 0.05,
-    // options for the Temporal Difference learner that trains the net
-    // by backpropping the temporal difference learning rule.
-    tdtrainer_options: {
-      learning_rate: 0.001,
-      momentum: 0.0,
-      batch_size: 64,
-      l2_decay: 0.01
-    },
-    // Prefer turning, to easier get unstuck while training.
-    //random_action_distribution: [0.1, 0.15, 0.15, 0.3, 0.3]
-  },
-  ratsim_opts: {
-    goal_timeout: 60, // Seconds
-    goal_model: 'rat_goal',
-    goal_height: 1.25,
-    goal_reached: 0.2,
-    robot_model: 'kulbu',
-    bounds: {
-      x: {
-        min: -5,
-        max: 5
-      },
-      y: {
-        min: -1,
-        max: 5
-      }
-    }
-  }
+  ]
 };
 
   var canvas, ctx;
@@ -493,7 +453,7 @@ var config = {
     };
 
     // A single agent
-    var Agent = function(behavior, colour, sensors, actions, brain_opts) {
+    var Agent = function(behavior, colour, sensors, actions) {
       var i,j;
 
       // positional information
