@@ -757,7 +757,29 @@ var config = {
             ctx.strokeStyle = "rgb(0,0,0)"; // wall or nothing
           }
           if(e.sensed_type === 1) { ctx.strokeStyle = "rgb(255,150,150)"; } // apples
-          if(e.sensed_type === 2) { ctx.strokeStyle = "rgb(255,255,0)"; } // poison
+          if(e.sensed_type === 2) { ctx.strokeStyle = "rgb(150,255,150)"; } // poison
+          ctx.beginPath();
+          ctx.moveTo(a.op.x, a.op.y);
+          ctx.lineTo(a.op.x + sr * Math.sin(a.oangle + e.angle),
+                     a.op.y + sr * Math.cos(a.oangle + e.angle));
+          ctx.stroke();
+        }
+
+        // draw agents smell
+        for(var ei=0,ne=a.sensors.nostrils.length;ei<ne;ei++) {
+          var e = a.sensors.nostrils[ei];
+          var sr = e.sensed_proximity;
+          //sr /= convnetjs.randi(1, 2);
+          /*
+          if(e.sensed_proximity < e.max_range && e.sensed_type === 0) {
+              console.log('oi', e.sensed_proximity);
+          }
+          */
+          if(e.sensed_type === -1) {
+            ctx.strokeStyle = "rgb(150,150,150)";
+          } else if (e.sensed_type === 0) {
+            ctx.strokeStyle = "rgb(255,150,150)";
+          }
           ctx.beginPath();
           ctx.moveTo(a.op.x, a.op.y);
           ctx.lineTo(a.op.x + sr * Math.sin(a.oangle + e.angle),
@@ -777,6 +799,17 @@ var config = {
         ctx.fill();
         ctx.stroke();
       }
+
+      // draw goal
+      ctx.fillStyle = "rgb(150, 150, 150)";
+      ctx.strokeStyle = "rgb(150,150,150)";
+      var it = w.goal;
+      if(it.type === 1) ctx.fillStyle = "rgb(255, 150, 150)";
+      if(it.type === 2) ctx.fillStyle = "rgb(150, 255, 150)";
+      ctx.beginPath();
+      ctx.arc(it.p.x, it.p.y, it.rad, 0, Math.PI*2, true);
+      ctx.fill();
+      ctx.stroke();
 
       //w.agents[1].brain.visSelf(document.getElementById('brain_info_div'));
     }
