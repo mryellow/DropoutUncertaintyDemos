@@ -571,17 +571,31 @@ var config = {
       forward: function() {
         // in forward pass the agent simply behaves in the environment
         // create input to brain
-        var num_eyes = this.eyes.length;
-        var input_array = new Array(num_eyes * 3);
-        for(var i=0;i<num_eyes;i++) {
-          var e = this.eyes[i];
-          input_array[i*3] = 1.0;
-          input_array[i*3+1] = 1.0;
-          input_array[i*3+2] = 1.0;
-          if(e.sensed_type !== -1) {
-            // sensed_type is 0 for wall, 1 for food and 2 for poison.
-            // lets do a 1-of-k encoding into the input array
-            input_array[i*3 + e.sensed_type] = e.sensed_proximity/e.max_range; // normalize to [0,1]
+        var i,j;
+        var idx = 0;
+        var num_inputs = 0;
+        for (j in this.sensors) {
+          if (this.sensors.hasOwnProperty(j)) {
+            num_inputs += this.sensors[j].length;
+          }
+        }
+        var input_array = new Array(num_inputs * 1);
+
+        var idx_last = 0;
+        for (j in this.sensors) {
+          if (this.sensors.hasOwnProperty(j)) {
+            for (i=0; i<this.sensors[j].length; i++) {
+              var s = this.sensors[j][i];
+              idx = (i * s.max_type)+idx_last;
+              for (k=0; k<s.max_type; k++) {
+                input_array[idx+k] = 1.0;
+              }
+              if (s.sensed_type !== -1) {
+                input_array[idx+s.sensed_type] = s.sensed_proximity/s.max_range; // normalize to [0,1]
+              }
+            }
+            // Offset the next sensor group by this much.
+            idx_last += this.sensors[j].length * this.sensors[j][0].max_type;
           }
         }
 
@@ -601,24 +615,89 @@ var config = {
         // in backward pass agent learns.
         // compute reward
         var proximity_reward = 0.0;
-        var num_eyes = this.eyes.length;
-        for(var i=0;i<num_eyes;i++) {
-          var e = this.eyes[i];
-          // agents dont like to see walls, especially up close
-          proximity_reward += e.sensed_type === 0 ? e.sensed_proximity/e.max_range : 1.0;
-        }
-        proximity_reward = proximity_reward/num_eyes;
-        //proximity_reward = Math.min(1.0, proximity_reward * 2); // seems to encourage agent to get stuck in walls at 90 degrees angle
+        var num_eyes = this.sensors.eyes.length;
+        for (var i=0; i<num_eyes; i++) {
+         var e = this.sensors.eyes[i];
+         // agents dont like to see walls, especially up close
+         var prox_sensed = e.sensed_proximity;
+         // Move walls away a little when close to goal.
+         if (this.goal && this.goal.dis > 0 && this.goal.dis < prox_sensed && prox_sensed < e.max_range) {
+             prox_sensed += this.goal.dis;
+         }
+         proximity_reward += e.sensed_type === 0 ? prox_sensed/e.max_range : 1.0;
 
-        // agents like to go straight forward
+        }
+        proximity_reward = 1 * proximity_reward/num_eyes;
+
+        // agents like to be near goals
+        var goal_dis_factor = 0.0;
+        var goal_rad_factor = 0.0;
+        var goal_reward     = 0.0;
+        if (this.goal && this.goal.dis > 0 && this.goal.dis < this.sensors.nostrils[0].max_range) {
+           // Inversely proportional to distance.
+           goal_dis_factor = 1 - (1 / (this.sensors.nostrils[0].max_range / this.goal.dis));
+           // Proportional to the closeness to centre of view.
+           //goal_rad_factor = jStat.normal.pdf(this.goal.rad, 0, 90*Math.PI/180);
+           //goal_rad_factor = 0.0;
+
+           //goal_reward = 1 * goal_dis_factor * goal_rad_factor * Math.pow(proximity_reward, 2);
+           //goal_reward = 1 * goal_dis_factor * goal_rad_factor;
+           /*
+           console.log(
+               'goal_reward',
+               ' =:'+goal_reward.toFixed(5),
+               ' p:'+proximity_reward.toFixed(3),
+               ' r:'+goal_dis_factor.toFixed(3),
+               (this.sensors.nostrils[0].max_range / this.goal.dis).toFixed(3),
+               ' c:'+goal_rad_factor.toFixed(3)
+           );
+           */
+        }
+        goal_dis_factor = Math.max(0.01, goal_dis_factor);
+        // Goal reward is enough to override proximity reward.
+        goal_reward = 1 * goal_dis_factor;
+        // Mix goal reward straight into proximity.
+        //proximity_reward *= Math.pow(goal_dis_factor, 2);
+
+        // agents like to go straight forward, more-so towards goals. // FIXME: "near" goals... side-effect, max towards goal.
         var forward_reward = 0.0;
-        if(this.actionix === 0 && proximity_reward > 0.75) forward_reward = 0.1 * proximity_reward;
+        // TODO: Refactor to overloadable functions like `random_action`.
+        if ((this.actionix === 0 || this.actionix === 1 || this.actionix === 2)) {
+         // Some forward reward, some forward goal reward.
+         // Instead of proximity threshold, a lower limit of 0.2.
+         // TODO: by goal_reward also?
+         //forward_reward = 0.1 * goal_dis_factor * goal_rad_factor * Math.pow(proximity_reward, 2);
+         //forward_reward = 0.1 * Math.pow((proximity_reward/2) + (goal_reward/2), 2);
+         forward_reward = 0.1 * Math.pow(proximity_reward, 2);
+         //forward_reward = 0.1 * Math.pow(proximity_reward - goal_reward, 2); // Closer to wall more forward reward? Close to goal less?
+         // Half as much for forward turns.
+         if (this.actionix === 1 || this.actionix === 2) {
+           forward_reward = forward_reward / 2;
+         }
+        }
 
         // agents like to eat good things
         var digestion_reward = this.digestion_signal;
         this.digestion_signal = 0.0;
 
-        var reward = proximity_reward + forward_reward + digestion_reward;
+        //var reward = (proximity_reward/2) + forward_reward + (goal_reward/2) + digestion_reward;
+        //var reward = proximity_reward + forward_reward + digestion_reward;
+        var reward = (2*goal_reward) + proximity_reward + forward_reward + digestion_reward;
+
+
+        // Log repeating actions.
+        // FIXME: Age stops increasing when not learning, spams log.
+        if (this.brain.age % 50 === 0) {
+         console.log(
+           ' a:'+this.actionix,
+           //'/'+this.repeat_cnt,
+           ' =:'+reward.toFixed(5),
+           ' p:'+proximity_reward.toFixed(3),
+           ' f:'+forward_reward.toFixed(3),
+           ' g:'+goal_reward.toFixed(3),
+           ' d:'+digestion_reward.toFixed(3)
+         );
+        }
 
         // pass to brain for learning
         this.brain.backward(reward);
