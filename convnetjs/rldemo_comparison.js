@@ -731,13 +731,15 @@ var config = {
           var e = a.sensors.nostrils[ei];
           var sr = e.sensed_proximity;
           if(e.sensed_type !== -1) {
+            ctx.strokeStyle = "rgb(250,250,250)";
+          } else if (e.sensed_type === 0) {
             ctx.strokeStyle = "rgb(255,150,150)";
-            ctx.beginPath();
-            ctx.moveTo(a.op.x, a.op.y);
-            ctx.lineTo(a.op.x + sr * Math.sin(a.oangle + e.angle),
-                       a.op.y + sr * Math.cos(a.oangle + e.angle));
-            ctx.stroke();
           }
+          ctx.beginPath();
+          ctx.moveTo(a.op.x, a.op.y);
+          ctx.lineTo(a.op.x + sr * Math.sin(a.oangle + e.angle),
+                     a.op.y + sr * Math.cos(a.oangle + e.angle));
+          ctx.stroke();
         }
       }
 
