@@ -39,10 +39,10 @@
 			<textarea id="qspec_greedy" style="height:300px; width:45%" readonly>
 // Epsilon greedy network
 
-var num_inputs = 27; // 9 eyes, each sees 3 numbers (wall, green, red thing proximity)
-var num_actions = 5; // 5 possible angles agent can turn
+var num_actions     = this.actions.length;
 var temporal_window = 1; // amount of temporal memory. 0 = agent lives in-the-moment :)
 var network_size = num_inputs*temporal_window + num_actions*temporal_window + num_inputs;
+console.log('Input network size:', network_size);
 
 // the value function network computes a value of taking any of the possible actions
 // given an input state. Here we specify one explicitly the hard way
@@ -77,10 +77,10 @@ var brain = new deepqlearn.Brain(num_inputs, num_actions, opt); // woohoo
 			<textarea id="qspec_thompson" style="height:300px; width:45%" readonly>
 // Thompson sampling network
 
-var num_inputs = 27; // 9 eyes, each sees 3 numbers (wall, green, red thing proximity)
-var num_actions = 5; // 5 possible angles agent can turn
+var num_actions     = this.actions.length;
 var temporal_window = 1; // amount of temporal memory. 0 = agent lives in-the-moment :)
 var network_size = num_inputs*temporal_window + num_actions*temporal_window + num_inputs;
+console.log('Input network size:', network_size);
 
 // the value function network computes a value of taking any of the possible actions
 // given an input state. Here we specify one explicitly the hard way
@@ -116,17 +116,17 @@ var brain = new deepqlearn.Brain(num_inputs, num_actions, opt); // woohoo
 		</p>
 	<script>
 	    show_rl = function() {
-	    	$(graph_canvas).css('opacity', 1); 
-	    	$(graph_canvas).css('background-image', ''); 
-	    	$('canvas#canvas').css('opacity', 1); 
-	    	$('canvas#canvas').css('background-image', ''); 
+	    	$(graph_canvas).css('opacity', 1);
+	    	$(graph_canvas).css('background-image', '');
+	    	$('canvas#canvas').css('opacity', 1);
+	    	$('canvas#canvas').css('background-image', '');
 	    	start();
 	    };
 	    hide_rl = function() {
-	    	$(graph_canvas).css('opacity', 0.4); 
-	    	$(graph_canvas).css('background-image', 'url("images/rl_screenshot_2_graph.jpg")'); 
-	    	$('canvas#canvas').css('opacity', 0.4); 
-	    	$('canvas#canvas').css('background-image', 'url("images/rl_screenshot_2_main.jpg")'); 
+	    	$(graph_canvas).css('opacity', 0.4);
+	    	$(graph_canvas).css('background-image', 'url("images/rl_screenshot_2_graph.jpg")');
+	    	$('canvas#canvas').css('opacity', 0.4);
+	    	$('canvas#canvas').css('background-image', 'url("images/rl_screenshot_2_main.jpg")');
 	    	stop();
 	    };
 	</script>
