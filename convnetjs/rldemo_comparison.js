@@ -853,8 +853,7 @@ var config = {
           config.brain_opts
         )
       ];
-      reward_graph = new cnnvis.MultiGraph(['Thompson', 'Greedy'], {styles: ['rgb(0,0,255)', 'rgb(0,255,0)'],
-        shaded: 3000 / 500});
+      reward_graph = new cnnvis.MultiGraph(['Thompson', 'Greedy'], {styles: ['rgb(0,0,255)', 'rgb(0,255,0)']});
 
       gofast();
     }
