@@ -642,7 +642,7 @@ var config = {
 
         //var reward = (proximity_reward/2) + forward_reward + (goal_reward/2) + digestion_reward;
         //var reward = proximity_reward + forward_reward + digestion_reward;
-        var reward = (2*goal_reward) + proximity_reward + forward_reward + digestion_reward;
+        var reward = (((2*goal_reward) + proximity_reward)/3) + forward_reward + digestion_reward;
 
 
         // Log repeating actions.
