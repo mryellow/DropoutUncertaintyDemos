@@ -730,8 +730,8 @@ var config = {
         for(var ei=0,ne=a.sensors.nostrils.length;ei<ne;ei++) {
           var e = a.sensors.nostrils[ei];
           var sr = e.sensed_proximity;
-          if(e.sensed_type !== -1) {
-            ctx.strokeStyle = "rgb(250,250,250)";
+          if(e.sensed_type === -1) {
+            ctx.strokeStyle = "rgb(230,230,230)";
           } else if (e.sensed_type === 0) {
             ctx.strokeStyle = "rgb(255,150,150)";
           }

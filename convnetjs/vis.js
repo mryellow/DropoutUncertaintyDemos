@@ -1,5 +1,5 @@
 
-// contains various utility functions 
+// contains various utility functions
 var cnnvis = (function(exports){
 
   // can be used to graph loss, or accuract over time
@@ -7,9 +7,9 @@ var cnnvis = (function(exports){
     var options = options || {};
     this.step_horizon = options.step_horizon || 1000;
     this.colour = options.colour || "red";
-    
+
     this.pts = [];
-    
+
     this.maxy = -9999;
     this.miny = 9999;
   }
@@ -26,7 +26,7 @@ var cnnvis = (function(exports){
     },
     // elt is a canvas we wish to draw into
     drawSelf: function(canv) {
-      
+
       var pad = 25;
       var H = canv.height;
       var W = canv.width;
@@ -92,7 +92,7 @@ var cnnvis = (function(exports){
     if(typeof options.miny !== 'undefined') this.miny_forced = options.miny;
 
     this.pts = [];
-    
+
     this.maxy = -9999;
     this.miny = 9999;
     this.numlines = 0;
@@ -122,7 +122,7 @@ var cnnvis = (function(exports){
     },
     // elt is a canvas we wish to draw into
     drawSelf: function(canv) {
-      
+
       var pad = 25;
       var H = canv.height;
       var W = canv.width;
@@ -141,7 +141,8 @@ var cnnvis = (function(exports){
       ctx.beginPath();
       var ng = 10;
       for(var i=0;i<=ng;i++) {
-        var xpos = Math.log(i+1) / Math.log(10+1) * (W-2*pad)+pad;
+        //var xpos = Math.log(i+1) / Math.log(10+1) * (W-2*pad)+pad;
+        var xpos = i/ng*(W-2*pad)+pad;
         ctx.moveTo(xpos, pad);
         ctx.lineTo(xpos, H-pad);
         ctx.fillText(f2t(i/ng*this.step_horizon/1000)+'k',xpos,H-pad+14);
@@ -168,7 +169,8 @@ var cnnvis = (function(exports){
 
       // draw the actual curve
       var t = function(x, y, s) {
-        var tx = Math.log(x) / 6.9 * (W-pad*2) + pad;
+        //var tx = Math.log(x) / 6.9 * (W-pad*2) + pad;
+        var tx = x / s.step_horizon * (W-pad*2) + pad;
         var ty = H - ((y-s.miny) / (s.maxy-s.miny) * (H-pad*2) + pad);
         return {tx:tx, ty:ty}
       }
@@ -201,5 +203,3 @@ var cnnvis = (function(exports){
   return exports;
 
 })(typeof module != 'undefined' && module.exports);  // add exports to module.exports if in node.js
-
-
