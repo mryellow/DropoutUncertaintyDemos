@@ -18,7 +18,9 @@
 	<body style='font-family: Arial, "Times New Roman", Times, serif;'>
 		<h1>RL with dropout uncertainty demo</h1>
 		<p>
-			Deep reinforcement learning demo with two behavioural policies: epsilon greedy (green), and Thompson sampling using dropout uncertainty (blue). The agents (blue and green discs) are rewarded for eating red things and walking straight, and penalised for eating yellow things and walking into walls. Both agents move at random for the first 3000 moves (the red shade in the graph). The $X$ axis of the plot shows the number of batches divided by 500 on log scale and the $Y$ axis shows average reward. (The code seems to work quickest on Chrome).
+			Deep reinforcement learning demo with two behavioural policies: epsilon greedy (green), and Thompson sampling using dropout uncertainty (blue).
+			The agents (blue and green discs) are rewarded for walking straight (also a little for forward turns), along with a reward based on their proximity to goals, and  penalised for walking into walls (unless a goal is nearer). 
+			Both agents move at random for the first 3000 moves (the red shade in the graph). The $X$ axis of the plot shows the number of batches divided by 500 on log scale and the $Y$ axis shows average reward. (The code seems to work quickest on Chrome).
 		</p>
 		<p>
 	    <div style="margin-left: auto; margin-right: auto; width: 700px">
