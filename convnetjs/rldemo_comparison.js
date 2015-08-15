@@ -730,22 +730,14 @@ var config = {
         for(var ei=0,ne=a.sensors.nostrils.length;ei<ne;ei++) {
           var e = a.sensors.nostrils[ei];
           var sr = e.sensed_proximity;
-          //sr /= convnetjs.randi(1, 2);
-          /*
-          if(e.sensed_proximity < e.max_range && e.sensed_type === 0) {
-              console.log('oi', e.sensed_proximity);
-          }
-          */
-          if(e.sensed_type === -1) {
-            ctx.strokeStyle = "rgb(150,150,150)";
-          } else if (e.sensed_type === 0) {
+          if(e.sensed_type !== -1) {
             ctx.strokeStyle = "rgb(255,150,150)";
+            ctx.beginPath();
+            ctx.moveTo(a.op.x, a.op.y);
+            ctx.lineTo(a.op.x + sr * Math.sin(a.oangle + e.angle),
+                       a.op.y + sr * Math.cos(a.oangle + e.angle));
+            ctx.stroke();
           }
-          ctx.beginPath();
-          ctx.moveTo(a.op.x, a.op.y);
-          ctx.lineTo(a.op.x + sr * Math.sin(a.oangle + e.angle),
-                     a.op.y + sr * Math.cos(a.oangle + e.angle));
-          ctx.stroke();
         }
       }
 
