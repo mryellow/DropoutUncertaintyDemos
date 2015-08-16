@@ -628,8 +628,8 @@ var config = {
          // TODO: by goal_reward also?
          //forward_reward = 0.1 * goal_dis_factor * goal_rad_factor * Math.pow(proximity_reward, 2);
          //forward_reward = 0.1 * Math.pow((proximity_reward/2) + (goal_reward/2), 2);
-         forward_reward = 0.1 * Math.pow(proximity_reward, 2);
-         //forward_reward = 0.1 * Math.pow(proximity_reward - goal_reward, 2); // Closer to wall more forward reward? Close to goal less?
+         //forward_reward = 0.1 * Math.pow(proximity_reward, 2);
+         forward_reward = 0.1 * Math.pow(proximity_reward - goal_reward, 2); // Closer to wall more forward reward? Close to goal less?
          // Half as much for forward turns.
          if (this.actionix === 1 || this.actionix === 2) {
            forward_reward = forward_reward / 2;

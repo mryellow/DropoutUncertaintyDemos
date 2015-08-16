@@ -91,7 +91,7 @@ console.log('Input network size:', network_size);
 var layer_defs = [];
 layer_defs.push({type:'input', out_sx:1, out_sy:1, out_depth:network_size});
 layer_defs.push({type:'fc', num_neurons: 50, activation:'relu'});
-layer_defs.push({type:'dropout', drop_prob:0.2});
+layer_defs.push({type:'dropout', drop_prob:0.1});
 layer_defs.push({type:'fc', num_neurons: 50, activation:'relu'});
 layer_defs.push({type:'regression', num_neurons:num_actions});
 
