@@ -24,7 +24,8 @@
 		</p>
 		<p>
 	    <div style="margin-left: auto; margin-right: auto; width: 700px">
-	   		<canvas class="12u" id="graph_canvas" width="700" height="150" style="background-image:url('images/rl_screenshot_2_graph.jpg'); background-size: cover; opacity:0.4"></canvas>
+	   		<canvas class="12u" id="reward_canvas" width="700" height="150" style="background-image:url('images/rl_screenshot_2_graph.jpg'); background-size: cover; opacity:0.4"></canvas>
+			<canvas class="12u" id="loss_canvas" width="700" height="150" style="background-image:url('images/rl_screenshot_2_graph.jpg'); background-size: cover; opacity:0.4"></canvas>
 	   		<canvas class="12u" id="canvas" width="700" height="500" style="background-image:url('images/rl_screenshot_2_main.jpg'); background-size: cover; opacity:0.4"></canvas>
    		</div>
 			<ul>
@@ -118,15 +119,19 @@ var brain = new deepqlearn.Brain(num_inputs, num_actions, opt); // woohoo
 		</p>
 	<script>
 	    show_rl = function() {
-	    	$(graph_canvas).css('opacity', 1);
-	    	$(graph_canvas).css('background-image', '');
+	    	$(reward_canvas).css('opacity', 1);
+	    	$(reward_canvas).css('background-image', '');
+			$(loss_canvas).css('opacity', 1);
+	    	$(loss_canvas).css('background-image', '');
 	    	$('canvas#canvas').css('opacity', 1);
 	    	$('canvas#canvas').css('background-image', '');
 	    	start();
 	    };
 	    hide_rl = function() {
-	    	$(graph_canvas).css('opacity', 0.4);
-	    	$(graph_canvas).css('background-image', 'url("images/rl_screenshot_2_graph.jpg")');
+	    	$(reward_canvas).css('opacity', 0.4);
+	    	$(reward_canvas).css('background-image', 'url("images/rl_screenshot_2_graph.jpg")');
+			$(loss_canvas).css('opacity', 0.4);
+	    	$(loss_canvas).css('background-image', 'url("images/rl_screenshot_2_graph.jpg")');
 	    	$('canvas#canvas').css('opacity', 0.4);
 	    	$('canvas#canvas').css('background-image', 'url("images/rl_screenshot_2_main.jpg")');
 	    	stop();

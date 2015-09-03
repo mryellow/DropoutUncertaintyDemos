@@ -614,8 +614,11 @@ var config = {
            */
         }
         goal_dis_factor = Math.max(0.01, goal_dis_factor);
-        // Goal reward is enough to override proximity reward.
-        goal_reward = 1 * goal_dis_factor;
+        goal_reward = 1 * Math.pow(goal_dis_factor, 2);
+        //goal_reward = 1 * goal_dis_factor * proximity_reward;
+        //goal_reward = 0.2 * Math.pow(goal_dis_factor * proximity_reward, 2);
+        //goal_reward = 0.1 * Math.pow(goal_dis_factor * proximity_reward, 2);
+        //goal_reward = 1 * goal_dis_factor;
         // Mix goal reward straight into proximity.
         //proximity_reward *= Math.pow(goal_dis_factor, 2);
 
@@ -625,13 +628,18 @@ var config = {
         // FIXME: but rats run on treadmills.....
 
         // TODO: Refactor to overloadable functions like `random_action`.
-        if ((this.actionix === 0 || this.actionix === 1 || this.actionix === 2)) {
+        if (this.actionix === 0 || this.actionix === 1 || this.actionix === 2) {
           // Some forward reward, some forward goal reward.
           // Instead of proximity threshold, a lower limit of 0.2.
           // TODO: by goal_reward also?
+          forward_reward = 0.1 * Math.pow((goal_reward * proximity_reward), 2);
+          //forward_reward = 0.1 * Math.pow(proximity_reward, 2);
+          //forward_reward = 0.1 * Math.pow(goal_reward, 2);
+          //forward_reward = 0.1 * Math.pow((1 - goal_dis_factor) * proximity_reward, 2);
+          //forward_reward = 0.1 * Math.pow(proximity_reward, 2);
+          //forward_reward = 0.1 * Math.pow((goal_reward * proximity_reward), 2);
           //forward_reward = 0.1 * goal_dis_factor * goal_rad_factor * Math.pow(proximity_reward, 2);
           //forward_reward = 0.1 * Math.pow((proximity_reward/2) + (goal_reward/2), 2);
-          forward_reward = 0.1 * Math.pow((goal_reward * proximity_reward), 2);
           //forward_reward = 0.1 * Math.pow(proximity_reward - goal_reward, 2); // Closer to wall more forward reward? Close to goal less?
           // Half as much for forward turns.
           /*
@@ -648,8 +656,12 @@ var config = {
         //var reward = (proximity_reward/2) + forward_reward + (goal_reward/2) + digestion_reward;
         //var reward = proximity_reward + forward_reward + digestion_reward;
         //var reward = (((2*goal_reward) + proximity_reward)/3) + forward_reward + digestion_reward;
+        //var reward = (goal_reward * proximity_reward) + forward_reward + digestion_reward;
+        //var reward = proximity_reward + goal_reward + forward_reward + digestion_reward;
+        //var reward = goal_reward + forward_reward + digestion_reward;
+        //var reward = goal_reward + digestion_reward;
+        //var reward = (goal_reward * (proximity_reward + forward_reward)) + digestion_reward;
         var reward = (goal_reward * proximity_reward) + forward_reward + digestion_reward;
-
 
         // Log repeating actions.
         // FIXME: Age stops increasing when not learning, spams log.
@@ -674,14 +686,19 @@ var config = {
     function draw_stats() {
       if(w.clock % 500 === 0) {
         var yl = Array(2);
+        var yh = Array(2);
         for(var i=0; i<2; i++){
           var a = w.agents[i];
           var b = a.brain;
-          yl[i] = b.average_reward_window.get_average()
+          yl[i] = b.average_reward_window.get_average();
+          yh[i] = b.average_loss_window.get_average();
         }
         reward_graph.add(w.clock/500, yl);
-        var gcanvas = document.getElementById("graph_canvas");
-        reward_graph.drawSelf(gcanvas);
+        if (w.clock > 3000) loss_graph.add(w.clock/500, yh);
+        var reward_canvas = document.getElementById("reward_canvas");
+        var loss_canvas   = document.getElementById("loss_canvas");
+        reward_graph.drawSelf(reward_canvas);
+        loss_graph.drawSelf(loss_canvas);
       }
     }
 
@@ -834,10 +851,11 @@ var config = {
     function reload() {
       w.agents = [new Agent()]; // this should simply work. I think... ;\
       reward_graph = cnnvis.MultiGraph(['thompson', 'greedy'], {styles: ['rgb(0,0,255)', 'rgb(0,255,0)']}); // reinit
+      loss_graph   = cnnvis.MultiGraph(['thompson', 'greedy'], {styles: ['rgb(0,0,255)', 'rgb(0,255,0)']}); // reinit
     }
 
     var w; // global world object
-    var reward_graph;
+    var reward_graph, loss_graph;
     var current_interval_id;
     var skipdraw = false;
     function start() {
@@ -860,12 +878,15 @@ var config = {
         )
       ];
       reward_graph = new cnnvis.MultiGraph(['Thompson', 'Greedy'], {styles: ['rgb(0,0,255)', 'rgb(0,255,0)']});
+      loss_graph   = new cnnvis.MultiGraph(['Thompson', 'Greedy'], {styles: ['rgb(0,0,255)', 'rgb(0,255,0)']});
 
       gofast();
     }
     function stop() {
       window.clearInterval(current_interval_id);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      var gcanvas = document.getElementById("graph_canvas");
-      gcanvas.getContext("2d").clearRect(0, 0, gcanvas.width, gcanvas.height);
+      var reward_canvas = document.getElementById("reward_canvas");
+      reward_canvas.getContext("2d").clearRect(0, 0, reward_canvas.width, reward_canvas.height);
+      var loss_canvas = document.getElementById("loss_canvas");
+      loss_canvas.getContext("2d").clearRect(0, 0, loss_canvas.width, loss_canvas.height);
     }
