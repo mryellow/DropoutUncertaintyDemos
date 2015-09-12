@@ -575,6 +575,7 @@ var config = {
         // in backward pass agent learns.
         // compute reward
         var proximity_reward = 0.0;
+        /*
         var num_eyes = this.sensors.eyes.length;
         for (var i=0; i<num_eyes; i++) {
          var e = this.sensors.eyes[i];
@@ -588,6 +589,7 @@ var config = {
 
         }
         proximity_reward = 1 * proximity_reward/num_eyes;
+        */
 
         // agents like to be near goals
         var goal_dis_factor = 0.0;
@@ -614,7 +616,8 @@ var config = {
            */
         }
         goal_dis_factor = Math.max(0.01, goal_dis_factor);
-        goal_reward = 1 * Math.pow(goal_dis_factor, 2);
+        goal_reward = 1 * goal_dis_factor; // remove polynomials
+        //goal_reward = 1 * Math.pow(goal_dis_factor, 2);
         //goal_reward = 1 * goal_dis_factor * proximity_reward;
         //goal_reward = 0.2 * Math.pow(goal_dis_factor * proximity_reward, 2);
         //goal_reward = 0.1 * Math.pow(goal_dis_factor * proximity_reward, 2);
@@ -632,7 +635,10 @@ var config = {
           // Some forward reward, some forward goal reward.
           // Instead of proximity threshold, a lower limit of 0.2.
           // TODO: by goal_reward also?
-          forward_reward = 0.1 * Math.pow((goal_reward * proximity_reward), 2);
+          //forward_reward = 0.1 * goal_reward * proximity_reward; // remove polynomials
+          //forward_reward = 0.1 * proximity_reward; // remove polynomials
+          forward_reward = 0.1 * Math.pow(proximity_reward, 2);
+          //forward_reward = 0.1 * Math.pow((goal_reward * proximity_reward), 2);
           //forward_reward = 0.1 * Math.pow(proximity_reward, 2);
           //forward_reward = 0.1 * Math.pow(goal_reward, 2);
           //forward_reward = 0.1 * Math.pow((1 - goal_dis_factor) * proximity_reward, 2);
@@ -643,6 +649,7 @@ var config = {
           //forward_reward = 0.1 * Math.pow(proximity_reward - goal_reward, 2); // Closer to wall more forward reward? Close to goal less?
           // Half as much for forward turns.
           /*
+          // dropout likes walls
           if (this.actionix === 1 || this.actionix === 2) {
             forward_reward = forward_reward / 2;
           }
@@ -660,8 +667,9 @@ var config = {
         //var reward = proximity_reward + goal_reward + forward_reward + digestion_reward;
         //var reward = goal_reward + forward_reward + digestion_reward;
         //var reward = goal_reward + digestion_reward;
-        //var reward = (goal_reward * (proximity_reward + forward_reward)) + digestion_reward;
-        var reward = (goal_reward * proximity_reward) + forward_reward + digestion_reward;
+        //var reward = (goal_reward * (proximity_reward + forward_reward)) + digestion_reward; // dropout likes walls
+        //var reward = (goal_reward * proximity_reward) + forward_reward + digestion_reward;
+        var reward = goal_reward;
 
         // Log repeating actions.
         // FIXME: Age stops increasing when not learning, spams log.
@@ -680,8 +688,20 @@ var config = {
 
         // pass to brain for learning
         this.brain.backward(reward);
+
+
+        if (this.goal && this.goal.dis < 0.01*this.sensors.nostrils[0].max_range) {
+          console.log('Goal reached.', this.goal.dis);
+          w.goal = new Item(
+              convnetjs.randf(20, w.W-20),
+              convnetjs.randf(20, w.H-20),
+              0
+          );
+          w.goal.rad = 15;
+        }
+
       }
-    }
+    };
 
     function draw_stats() {
       if(w.clock % 500 === 0) {
