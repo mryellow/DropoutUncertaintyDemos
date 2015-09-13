@@ -953,3 +953,9 @@ var config = {
       util_add_box(w.walls, 400, 100, 200, 300);
       w.walls.pop();
     }
+
+    function age() {
+      for(var i=0,n=w.agents.length;i<n;i++) {
+        w.agents[i].brain.age = 10000;
+      }
+    }
