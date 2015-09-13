@@ -35,7 +35,8 @@ var config = {
     var Vec = function(x, y) {
       this.x = x;
       this.y = y;
-    }
+    };
+
     Vec.prototype = {
 
       // utilities
@@ -53,7 +54,7 @@ var config = {
       // in place operations
       scale: function(s) { this.x *= s; this.y *= s; },
       normalize: function() { var d = this.length(); this.scale(1.0/d); }
-    }
+    };
 
     // line intersection helper function: does line segment (p1,p2) intersect segment (p3,p4) ?
     var line_intersect = function(p1,p2,p3,p4) {
@@ -66,7 +67,7 @@ var config = {
         return {ua:ua, ub:ub, up:up}; // up is intersection point
       }
       return false;
-    }
+    };
 
     var line_point_intersect = function(p1,p2,p0,rad) {
       var v = new Vec(p2.y-p1.y,-(p2.x-p1.x)); // perpendicular vector
@@ -87,13 +88,13 @@ var config = {
         return {ua:ua, up:up};
       }
       return false;
-    }
+    };
 
     // Wall is made up of two points
     var Wall = function(p1, p2) {
       this.p1 = p1;
       this.p2 = p2;
-    }
+    };
 
     // World object contains many agents and walls and food and stuff
     var util_add_box = function(lst, x, y, w, h) {
@@ -101,7 +102,7 @@ var config = {
       lst.push(new Wall(new Vec(x+w,y), new Vec(x+w,y+h)));
       lst.push(new Wall(new Vec(x+w,y+h), new Vec(x,y+h)));
       lst.push(new Wall(new Vec(x,y+h), new Vec(x,y)));
-    }
+    };
 
     // item is circle thing on the floor that agent can interact with (see or eat, etc)
     var Item = function(x, y, type) {
@@ -110,7 +111,7 @@ var config = {
       this.rad = 10; // default radius
       this.age = 0;
       this.cleanup_ = false;
-    }
+    };
 
     var World = function() {
       this.agents = [];
@@ -132,7 +133,7 @@ var config = {
       this.items = [];
 
       this.goals = [];
-    }
+    };
 
     World.prototype = {
       // helper function to get closest colliding walls/items
@@ -228,11 +229,11 @@ var config = {
           }
           //console.log(robot_r.toFixed(3), srad.toFixed(3), sdis.toFixed(0));
 
-          var e = findByAngle(a.sensors.nostrils, srad);
-          if (e && sdis < e.max_range) {
+          var nostril = findByAngle(a.sensors.nostrils, srad);
+          if (nostril && sdis < nostril.max_range) {
            // eye collided with wall
-           e.sensed_proximity = sdis;
-           e.sensed_type = this.goals[i].type;
+           nostril.sensed_proximity = sdis;
+           nostril.sensed_type = this.goals[i].type;
           }
 
           // Record for rewarding later.
@@ -271,8 +272,7 @@ var config = {
           if(a.angle>2*Math.PI)a.angle-=2*Math.PI;
 
           // agent is trying to move from p to op. Check walls
-          var res = this.stuff_collide_(a.op, a.p, true, false);
-          if(res) {
+          if(this.stuff_collide_(a.op, a.p, true, false)) {
             // wall collision! reset position
             a.p = a.op;
           }
@@ -349,7 +349,7 @@ var config = {
           this.agents[i].backward();
         }
       }
-    }
+    };
 
     /**
      * Lookup a sensor array by name.
@@ -516,7 +516,8 @@ var config = {
       this.rot2 = 0.0; // rotation speed of 2nd wheel
 
       this.prevactionix = -1;
-    }
+    };
+
     Agent.prototype = {
       /**
        * Add RatSLAM goal to memory for later reward
@@ -736,6 +737,7 @@ var config = {
 
     // Draw everything
     function draw() {
+      var i,ei;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.lineWidth = 1;
       var agents = w.agents;
@@ -743,7 +745,7 @@ var config = {
       // draw walls in environment
       ctx.strokeStyle = "rgb(0,0,0)";
       ctx.beginPath();
-      for(var i=0,n=w.walls.length;i<n;i++) {
+      for(i=0,n=w.walls.length;i<n;i++) {
         var q = w.walls[i];
         ctx.moveTo(q.p1.x, q.p1.y);
         ctx.lineTo(q.p2.x, q.p2.y);
@@ -751,7 +753,7 @@ var config = {
       ctx.stroke();
 
       // draw agents
-      for(var i=0,n=agents.length;i<n;i++) {
+      for(i=0,n=agents.length;i<n;i++) {
         var a = agents[i];
         //var r = Math.floor(a.brain.latest_reward * 200);
         //if(r>255)r=255;if(r<0)r=0;
@@ -766,18 +768,18 @@ var config = {
         ctx.stroke();
 
         // draw agents sight
-        for(var ei=0,ne=a.sensors.eyes.length;ei<ne;ei++) {
-          var e = a.sensors.eyes[ei];
-          var sr = e.sensed_proximity;
-          if(e.sensed_type === -1 || e.sensed_type === 0) {
+        for(ei=0,ne=a.sensors.eyes.length;ei<ne;ei++) {
+          var eye = a.sensors.eyes[ei];
+          var er = eye.sensed_proximity;
+          if(eye.sensed_type === -1 || eye.sensed_type === 0) {
             ctx.strokeStyle = "rgb(0,0,0)"; // wall or nothing
           }
-          if(e.sensed_type === 1) { ctx.strokeStyle = "rgb(255,150,150)"; } // apples
-          if(e.sensed_type === 2) { ctx.strokeStyle = "rgb(150,255,150)"; } // poison
+          if(eye.sensed_type === 1) { ctx.strokeStyle = "rgb(255,150,150)"; } // apples
+          if(eye.sensed_type === 2) { ctx.strokeStyle = "rgb(150,255,150)"; } // poison
           ctx.beginPath();
           ctx.moveTo(a.op.x, a.op.y);
-          ctx.lineTo(a.op.x + sr * Math.sin(a.oangle + e.angle),
-                     a.op.y + sr * Math.cos(a.oangle + e.angle));
+          ctx.lineTo(a.op.x + er * Math.sin(a.oangle + eye.angle),
+                     a.op.y + er * Math.cos(a.oangle + eye.angle));
           ctx.stroke();
         }
 
@@ -793,25 +795,25 @@ var config = {
         ctx.stroke();
 
         // draw agents smell
-        for(var ei=0,ne=a.sensors.nostrils.length;ei<ne;ei++) {
-          var e = a.sensors.nostrils[ei];
-          var sr = e.sensed_proximity;
-          if(e.sensed_type === -1) {
+        for(ei=0,ne=a.sensors.nostrils.length;ei<ne;ei++) {
+          var nostril = a.sensors.nostrils[ei];
+          var nr = nostril.sensed_proximity;
+          if(nostril.sensed_type === -1) {
             ctx.strokeStyle = "rgb(230,230,230)";
-          } else if (e.sensed_type === 0) {
+          } else if (nostril.sensed_type === 0) {
             ctx.strokeStyle = "rgb(255,150,150)";
           }
           ctx.beginPath();
           ctx.moveTo(a.op.x, a.op.y);
-          ctx.lineTo(a.op.x + sr * Math.sin(a.oangle + e.angle),
-                     a.op.y + sr * Math.cos(a.oangle + e.angle));
+          ctx.lineTo(a.op.x + nr * Math.sin(a.oangle + nostril.angle),
+                     a.op.y + nr * Math.cos(a.oangle + nostril.angle));
           ctx.stroke();
         }
       }
 
       // draw items
       ctx.strokeStyle = "rgb(0,0,0)";
-      for(var i=0,n=w.items.length;i<n;i++) {
+      for(i=0,n=w.items.length;i<n;i++) {
         var it = w.items[i];
         if(it.type === 1) ctx.fillStyle = "rgb(255, 150, 150)";
         if(it.type === 2) ctx.fillStyle = "rgb(255, 255, 0)";
