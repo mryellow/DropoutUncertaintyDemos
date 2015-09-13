@@ -945,3 +945,11 @@ var config = {
       var loss_canvas = document.getElementById("loss_canvas");
       loss_canvas.getContext("2d").clearRect(0, 0, loss_canvas.width, loss_canvas.height);
     }
+
+    // inner walls
+    function walls() {
+      util_add_box(w.walls, 100, 100, 200, 300);
+      w.walls.pop();
+      util_add_box(w.walls, 400, 100, 200, 300);
+      w.walls.pop();
+    }
