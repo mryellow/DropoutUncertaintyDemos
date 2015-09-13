@@ -696,16 +696,18 @@ var config = {
 
         if (this.goal && this.goal.dis < 0.05*this.sensors.nostrils[0].max_range) {
           console.log('Goal reached.', this.goal.dis.toFixed(3));
-          
+
           // Re-init goal
           for(i=0,n=w.agents.length;i<n;i++) {
             // Find matching goal index.
             if (w.agents[i] === this) {
               var og = w.goals[i];
               // Just a little change from current position...
+              var x = Math.min(w.W-20, Math.max(20, convnetjs.randf(og.p.x-10, og.p.x+10)));
+              var y = Math.min(w.H-20, Math.max(20, convnetjs.randf(og.p.y-10, og.p.y+10)));
               w.goals[i] = new Item(
-                convnetjs.randf(og.p.x-20, og.p.x+20),
-                convnetjs.randf(og.p.x-20, og.p.y+20),
+                x,
+                y,
                 0
               );
               w.goals[i].rad = 15;
