@@ -575,7 +575,6 @@ var config = {
         // in backward pass agent learns.
         // compute reward
         var proximity_reward = 0.0;
-        /*
         var num_eyes = this.sensors.eyes.length;
         for (var i=0; i<num_eyes; i++) {
          var e = this.sensors.eyes[i];
@@ -589,7 +588,6 @@ var config = {
 
         }
         proximity_reward = 1 * proximity_reward/num_eyes;
-        */
 
         // agents like to be near goals
         var goal_dis_factor = 0.0;
@@ -631,13 +629,16 @@ var config = {
         // FIXME: but rats run on treadmills.....
 
         // TODO: Refactor to overloadable functions like `random_action`.
-        if (this.actionix === 0 || this.actionix === 1 || this.actionix === 2) {
+        //if (this.actionix === 0 || this.actionix === 1 || this.actionix === 2) {
+        if (this.actionix === 0) {
           // Some forward reward, some forward goal reward.
           // Instead of proximity threshold, a lower limit of 0.2.
           // TODO: by goal_reward also?
+          forward_reward = 0.1 * proximity_reward;
+          //forward_reward = 0.1 * goal_reward;
           //forward_reward = 0.1 * goal_reward * proximity_reward; // remove polynomials
           //forward_reward = 0.1 * proximity_reward; // remove polynomials
-          forward_reward = 0.1 * Math.pow(proximity_reward, 2);
+          //forward_reward = 0.1 * Math.pow(proximity_reward, 2);
           //forward_reward = 0.1 * Math.pow((goal_reward * proximity_reward), 2);
           //forward_reward = 0.1 * Math.pow(proximity_reward, 2);
           //forward_reward = 0.1 * Math.pow(goal_reward, 2);
@@ -669,7 +670,8 @@ var config = {
         //var reward = goal_reward + digestion_reward;
         //var reward = (goal_reward * (proximity_reward + forward_reward)) + digestion_reward; // dropout likes walls
         //var reward = (goal_reward * proximity_reward) + forward_reward + digestion_reward;
-        var reward = goal_reward;
+        //var reward = goal_reward;
+        var reward = goal_reward + forward_reward;
 
         // Log repeating actions.
         // FIXME: Age stops increasing when not learning, spams log.
@@ -690,8 +692,9 @@ var config = {
         this.brain.backward(reward);
 
 
-        if (this.goal && this.goal.dis < 0.01*this.sensors.nostrils[0].max_range) {
-          console.log('Goal reached.', this.goal.dis);
+        if (this.goal && this.goal.dis < 0.05*this.sensors.nostrils[0].max_range) {
+          console.log('Goal reached.', this.goal.dis.toFixed(3));
+          // TODO: Just a little change from current position...
           w.goal = new Item(
               convnetjs.randf(20, w.W-20),
               convnetjs.randf(20, w.H-20),
@@ -714,7 +717,7 @@ var config = {
           yh[i] = b.average_loss_window.get_average();
         }
         reward_graph.add(w.clock/500, yl);
-        if (w.clock > 3000) loss_graph.add(w.clock/500, yh);
+        if (w.clock > 5000) loss_graph.add(w.clock/500, yh);
         var reward_canvas = document.getElementById("reward_canvas");
         var loss_canvas   = document.getElementById("loss_canvas");
         reward_graph.drawSelf(reward_canvas);
