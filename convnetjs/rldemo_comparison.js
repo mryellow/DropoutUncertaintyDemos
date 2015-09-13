@@ -673,8 +673,8 @@ var config = {
         //var reward = goal_reward + digestion_reward;
         //var reward = (goal_reward * (proximity_reward + forward_reward)) + digestion_reward; // dropout likes walls
         //var reward = (goal_reward * proximity_reward) + forward_reward + digestion_reward;
-        //var reward = goal_reward;
-        var reward = goal_reward + forward_reward;
+        var reward = goal_reward;
+        //var reward = goal_reward + forward_reward;
 
         // Log repeating actions.
         // FIXME: Age stops increasing when not learning, spams log.
@@ -696,16 +696,17 @@ var config = {
 
         if (this.goal && this.goal.dis < 0.05*this.sensors.nostrils[0].max_range) {
           console.log('Goal reached.', this.goal.dis.toFixed(3));
-          // TODO: Just a little change from current position...
-
+          
           // Re-init goal
           for(i=0,n=w.agents.length;i<n;i++) {
             // Find matching goal index.
             if (w.agents[i] === this) {
+              var og = w.goals[i];
+              // Just a little change from current position...
               w.goals[i] = new Item(
-                  convnetjs.randf(20, w.W-20),
-                  convnetjs.randf(20, w.H-20),
-                  0
+                convnetjs.randf(og.p.x-20, og.p.x+20),
+                convnetjs.randf(og.p.x-20, og.p.y+20),
+                0
               );
               w.goals[i].rad = 15;
             }
