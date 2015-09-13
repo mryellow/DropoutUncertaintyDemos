@@ -22,8 +22,8 @@ var config = {
   },
   actions: [
     [1.0,1.0],
-    [1.0,0.5], // FIXME: 4 will work... less forward? pub some of these 1 time to see.
-    [0.5,1.0],
+    [1.0,0.75], // FIXME: 4 will work... less forward? pub some of these 1 time to see.
+    [0.75,1.0],
     [0.5,0.0],
     [0.0,0.5]
   ]
@@ -124,10 +124,12 @@ var config = {
       this.walls = [];
       var pad = 10;
       util_add_box(this.walls, pad, pad, this.W-pad*2, this.H-pad*2);
+      /*
       util_add_box(this.walls, 100, 100, 200, 300); // inner walls
       this.walls.pop();
       util_add_box(this.walls, 400, 100, 200, 300);
       this.walls.pop();
+      */
 
       // set up food and poison
       this.items = [];
@@ -605,6 +607,10 @@ var config = {
 
            //goal_reward = 1 * goal_dis_factor * goal_rad_factor * Math.pow(proximity_reward, 2);
            //goal_reward = 1 * goal_dis_factor * goal_rad_factor;
+
+           // TODO: Penalise goal_reward if wall between here and there.
+
+
            /*
            console.log(
                'goal_reward',
@@ -625,6 +631,7 @@ var config = {
         //goal_reward = 1 * goal_dis_factor;
         // Mix goal reward straight into proximity.
         //proximity_reward *= Math.pow(goal_dis_factor, 2);
+
 
         // agents like to go straight forward, more-so towards goals. // FIXME: "near" goals... side-effect, max towards goal.
         var forward_reward = 0.0;
