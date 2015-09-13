@@ -76,11 +76,12 @@ var config = {
 
       v.normalize();
       v.scale(d);
+      var ua;
       var up = p0.add(v);
       if(Math.abs(p2.x-p1.x)>Math.abs(p2.y-p1.y)) {
-        var ua = (up.x - p1.x) / (p2.x - p1.x);
+        ua = (up.x - p1.x) / (p2.x - p1.x);
       } else {
-        var ua = (up.y - p1.y) / (p2.y - p1.y);
+        ua = (up.y - p1.y) / (p2.y - p1.y);
       }
       if(ua>0.0&&ua<1.0) {
         return {ua:ua, up:up};
@@ -130,24 +131,20 @@ var config = {
       // set up food and poison
       this.items = [];
 
-      this.goal = new Item(
-          convnetjs.randf(20, this.W-20),
-          convnetjs.randf(20, this.H-20),
-          0
-      );
-      this.goal.rad = 15;
+      this.goals = [];
     }
 
     World.prototype = {
       // helper function to get closest colliding walls/items
       stuff_collide_: function(p1, p2, check_walls, check_items) {
+        var i,res;
         var minres = false;
 
         // collide with walls
         if(check_walls) {
-          for(var i=0,n=this.walls.length;i<n;i++) {
+          for(i=0,n=this.walls.length;i<n;i++) {
             var wall = this.walls[i];
-            var res = line_intersect(p1, p2, wall.p1, wall.p2);
+            res = line_intersect(p1, p2, wall.p1, wall.p2);
             if(res) {
               res.type = 0; // 0 is wall
               if(!minres) { minres=res; }
@@ -164,9 +161,9 @@ var config = {
 
         // collide with items
         if(check_items) {
-          for(var i=0,n=this.items.length;i<n;i++) {
+          for(i=0,n=this.items.length;i<n;i++) {
             var it = this.items[i];
-            var res = line_point_intersect(p1, p2, it.p, it.rad);
+            res = line_point_intersect(p1, p2, it.p, it.rad);
             if(res) {
               res.type = it.type; // store type of item
               if(!minres) { minres=res; }
@@ -179,14 +176,16 @@ var config = {
         return minres;
       },
       tick: function() {
+        var a,i,n,it;
+
         // tick the environment
         this.clock++;
 
         // fix input to all agents based on environment
         // process eyes
         this.collpoints = [];
-        for(var i=0,n=this.agents.length;i<n;i++) {
-          var a = this.agents[i];
+        for(i=0,n=this.agents.length;i<n;i++) {
+          a = this.agents[i];
           for(var ei=0,ne=a.sensors.eyes.length;ei<ne;ei++) {
             var e = a.sensors.eyes[ei];
             // we have a line from p to p->eyep
@@ -209,9 +208,9 @@ var config = {
           // x/y reversed compared to Gazebo.
           // Find nearest nostril and apply goal
           //`tan(rad) = Opposite / Adjacent = (y2-y1)/(x2-x1)`
-          var srad = Math.atan2(this.goal.p.x - a.p.x, this.goal.p.y - a.p.y);
+          var srad = Math.atan2(this.goals[i].p.x - a.p.x, this.goals[i].p.y - a.p.y);
           //`Hypotenuse = (y2-y1)/sin(rad)`
-          var sdis = Math.abs((this.goal.p.x - a.p.x)/Math.sin(srad));
+          var sdis = Math.abs((this.goals[i].p.x - a.p.x)/Math.sin(srad));
 
           var robot_r = a.angle;
           if (robot_r > Math.PI) {
@@ -233,7 +232,7 @@ var config = {
           if (e && sdis < e.max_range) {
            // eye collided with wall
            e.sensed_proximity = sdis;
-           e.sensed_type = this.goal.type;
+           e.sensed_type = this.goals[i].type;
           }
 
           // Record for rewarding later.
@@ -241,13 +240,13 @@ var config = {
         }
 
         // let the agents behave in the world based on their input
-        for(var i=0,n=this.agents.length;i<n;i++) {
+        for(i=0,n=this.agents.length;i<n;i++) {
           this.agents[i].forward();
         }
 
         // apply outputs of agents on evironment
-        for(var i=0,n=this.agents.length;i<n;i++) {
-          var a = this.agents[i];
+        for(i=0,n=this.agents.length;i<n;i++) {
+          a = this.agents[i];
           a.op = a.p; // back up old position
           a.oangle = a.angle; // and angle
 
@@ -287,13 +286,13 @@ var config = {
 
         // tick all items
         var update_items = false;
-        for(var i=0,n=this.items.length;i<n;i++) {
-          var it = this.items[i];
+        for(i=0,n=this.items.length;i<n;i++) {
+          it = this.items[i];
           it.age += 1;
 
           // see if some agent gets lunch
           for(var j=0,m=this.agents.length;j<m;j++) {
-            var a = this.agents[j];
+            a = this.agents[j];
             var d = a.p.dist_from(it.p);
             if(d < it.rad + a.rad) {
 
@@ -317,8 +316,8 @@ var config = {
         }
         if(update_items) {
           var nt = [];
-          for(var i=0,n=this.items.length;i<n;i++) {
-            var it = this.items[i];
+          for(i=0,n=this.items.length;i<n;i++) {
+            it = this.items[i];
             if(!it.cleanup_) nt.push(it);
           }
           this.items = nt; // swap
@@ -333,17 +332,20 @@ var config = {
         }
         */
 
-        if(this.goal && this.clock % 500 === 0 && convnetjs.randf(0,1)<0.25) {
-          this.goal = new Item(
-              convnetjs.randf(20, this.W-20),
-              convnetjs.randf(20, this.H-20),
-              0
-          );
-          this.goal.rad = 15;
+        if (this.clock % 500 === 0 && convnetjs.randf(0,1)<0.25) {
+          // Re-init goals
+          for(i=0,n=this.agents.length;i<n;i++) {
+            this.goals[i] = new Item(
+                convnetjs.randf(20, this.W-20),
+                convnetjs.randf(20, this.H-20),
+                0
+            );
+            this.goals[i].rad = 15;
+          }
         }
 
         // agents are given the opportunity to learn based on feedback of their action on environment
-        for(var i=0,n=this.agents.length;i<n;i++) {
+        for(i=0,n=this.agents.length;i<n;i++) {
           this.agents[i].backward();
         }
       }
@@ -691,16 +693,23 @@ var config = {
         // pass to brain for learning
         this.brain.backward(reward);
 
-
         if (this.goal && this.goal.dis < 0.05*this.sensors.nostrils[0].max_range) {
           console.log('Goal reached.', this.goal.dis.toFixed(3));
           // TODO: Just a little change from current position...
-          w.goal = new Item(
-              convnetjs.randf(20, w.W-20),
-              convnetjs.randf(20, w.H-20),
-              0
-          );
-          w.goal.rad = 15;
+
+          // Re-init goal
+          for(i=0,n=w.agents.length;i<n;i++) {
+            // Find matching goal index.
+            if (w.agents[i] === this) {
+              w.goals[i] = new Item(
+                  convnetjs.randf(20, w.W-20),
+                  convnetjs.randf(20, w.H-20),
+                  0
+              );
+              w.goals[i].rad = 15;
+            }
+          }
+
         }
 
       }
@@ -772,6 +781,17 @@ var config = {
           ctx.stroke();
         }
 
+        // draw goal
+        ctx.fillStyle = "rgb(150, 150, 150)";
+        ctx.strokeStyle = "rgb(150,150,150)";
+        var g = w.goals[i];
+        if(g.type === 1) ctx.fillStyle = "rgb(255, 150, 150)";
+        if(g.type === 2) ctx.fillStyle = "rgb(150, 255, 150)";
+        ctx.beginPath();
+        ctx.arc(g.p.x, g.p.y, g.rad, 0, Math.PI*2, true);
+        ctx.fill();
+        ctx.stroke();
+
         // draw agents smell
         for(var ei=0,ne=a.sensors.nostrils.length;ei<ne;ei++) {
           var e = a.sensors.nostrils[ei];
@@ -800,17 +820,6 @@ var config = {
         ctx.fill();
         ctx.stroke();
       }
-
-      // draw goal
-      ctx.fillStyle = "rgb(150, 150, 150)";
-      ctx.strokeStyle = "rgb(150,150,150)";
-      var it = w.goal;
-      if(it.type === 1) ctx.fillStyle = "rgb(255, 150, 150)";
-      if(it.type === 2) ctx.fillStyle = "rgb(150, 255, 150)";
-      ctx.beginPath();
-      ctx.arc(it.p.x, it.p.y, it.rad, 0, Math.PI*2, true);
-      ctx.fill();
-      ctx.stroke();
 
       //w.agents[1].brain.visSelf(document.getElementById('brain_info_div'));
     }
@@ -900,6 +909,17 @@ var config = {
           config.brain_opts
         )
       ];
+
+      // Init goals
+      for(var i=0,n=w.agents.length;i<n;i++) {
+        w.goals[i] = new Item(
+            convnetjs.randf(20, w.W-20),
+            convnetjs.randf(20, w.H-20),
+            0
+        );
+        w.goals[i].rad = 15;
+      }
+
       reward_graph = new cnnvis.MultiGraph(['Thompson', 'Greedy'], {styles: ['rgb(0,0,255)', 'rgb(0,255,0)']});
       loss_graph   = new cnnvis.MultiGraph(['Thompson', 'Greedy'], {styles: ['rgb(0,0,255)', 'rgb(0,255,0)']});
 
