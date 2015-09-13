@@ -694,7 +694,7 @@ var config = {
         // pass to brain for learning
         this.brain.backward(reward);
 
-        if (this.goal && this.goal.dis < 0.05*this.sensors.nostrils[0].max_range) {
+        if (this.goal && this.goal.dis < 0.02*this.sensors.nostrils[0].max_range) {
           console.log('Goal reached.', this.goal.dis.toFixed(3));
 
           // Re-init goal
@@ -703,8 +703,8 @@ var config = {
             if (w.agents[i] === this) {
               var og = w.goals[i];
               // Just a little change from current position...
-              var x = Math.min(w.W-20, Math.max(20, convnetjs.randf(og.p.x-10, og.p.x+10)));
-              var y = Math.min(w.H-20, Math.max(20, convnetjs.randf(og.p.y-10, og.p.y+10)));
+              var x = Math.min(w.W-20, Math.max(20, convnetjs.randf(og.p.x-50, og.p.x+50)));
+              var y = Math.min(w.H-20, Math.max(20, convnetjs.randf(og.p.y-50, og.p.y+50)));
               w.goals[i] = new Item(
                 x,
                 y,
