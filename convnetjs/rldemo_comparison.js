@@ -667,6 +667,31 @@ var config = {
           */
         }
 
+        // detect reaching goal
+        if (this.goal && this.goal.dis < 0.02*this.sensors.nostrils[0].max_range) {
+          console.log('Goal reached.', this.goal.dis.toFixed(3));
+
+          // not available from mapping.
+          this.digestion_signal += 1;
+
+          // Re-init goal
+          for(i=0,n=w.agents.length;i<n;i++) {
+            // Find matching goal index.
+            if (w.agents[i] === this) {
+              var og = w.goals[i];
+              // Just a little change from current position...
+              var x = Math.min(w.W-20, Math.max(20, convnetjs.randf(og.p.x-50, og.p.x+50)));
+              var y = Math.min(w.H-20, Math.max(20, convnetjs.randf(og.p.y-50, og.p.y+50)));
+              w.goals[i] = new Item(
+                x,
+                y,
+                0
+              );
+              w.goals[i].rad = 15;
+            }
+          }
+        }
+
         // agents like to eat good things
         var digestion_reward = this.digestion_signal;
         this.digestion_signal = 0.0;
@@ -680,8 +705,19 @@ var config = {
         //var reward = goal_reward + digestion_reward;
         //var reward = (goal_reward * (proximity_reward + forward_reward)) + digestion_reward; // dropout likes walls
         //var reward = (goal_reward * proximity_reward) + forward_reward + digestion_reward;
-        var reward = goal_reward;
+        //var reward = goal_reward;
         //var reward = goal_reward + forward_reward;
+        var reward = digestion_reward;
+
+        /*
+        As long as some positions have fixed score (eg. won, lost, or drawn positions), models with higher
+        predictive power would have better temporal consistency (this is not true if no position has fixed
+        score, since the model can always produce a constant value for example, and achieve temporal
+        consistency that way [18]).
+
+        // http://arxiv.org/pdf/1509.01549v1.pdf
+        */
+
 
         // Log repeating actions.
         // FIXME: Age stops increasing when not learning, spams log.
@@ -700,28 +736,6 @@ var config = {
 
         // pass to brain for learning
         this.brain.backward(reward);
-
-        if (this.goal && this.goal.dis < 0.02*this.sensors.nostrils[0].max_range) {
-          console.log('Goal reached.', this.goal.dis.toFixed(3));
-
-          // Re-init goal
-          for(i=0,n=w.agents.length;i<n;i++) {
-            // Find matching goal index.
-            if (w.agents[i] === this) {
-              var og = w.goals[i];
-              // Just a little change from current position...
-              var x = Math.min(w.W-20, Math.max(20, convnetjs.randf(og.p.x-50, og.p.x+50)));
-              var y = Math.min(w.H-20, Math.max(20, convnetjs.randf(og.p.y-50, og.p.y+50)));
-              w.goals[i] = new Item(
-                x,
-                y,
-                0
-              );
-              w.goals[i].rad = 15;
-            }
-          }
-
-        }
 
       }
     };
@@ -956,6 +970,6 @@ var config = {
 
     function age() {
       for(var i=0,n=w.agents.length;i<n;i++) {
-        w.agents[i].brain.age = 10000;
+        w.agents[i].brain.age = w.agents[i].brain.learning_steps_total/2;
       }
     }
