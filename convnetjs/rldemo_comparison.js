@@ -382,7 +382,7 @@ var config = {
           }
           this.goals = nt; // swap
         }
-        if(this.goals.length < 30 && this.clock % 10 === 0 && convnetjs.randf(0,1)<0.25) {
+        if(this.goals.length < 2) { // && this.clock % 10 === 0 && convnetjs.randf(0,1)<0.25) {
           // TODO: Only move a little if reached?
           var newitx = convnetjs.randf(20, this.W-20);
           var newity = convnetjs.randf(20, this.H-20);
@@ -390,20 +390,6 @@ var config = {
           newit.rad = 10;
           this.goals.push(newit);
         }
-
-        /*
-        if (this.clock % 500 === 0 && convnetjs.randf(0,1)<0.25) {
-          // Re-init goals
-          for(i=0,n=this.agents.length;i<n;i++) {
-            this.goals[i] = new Item(
-                convnetjs.randf(20, this.W-20),
-                convnetjs.randf(20, this.H-20),
-                0
-            );
-            this.goals[i].rad = 10;
-          }
-        }
-        */
 
         // agents are given the opportunity to learn based on feedback of their action on environment
         for(i=0,n=this.agents.length;i<n;i++) {
