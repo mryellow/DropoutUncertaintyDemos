@@ -35,6 +35,10 @@
 				<li><a href="javascript:hide_rl()" class="button">Stop</a></li>
 				<li><a href="javascript:walls()" class="button">Add walls</a></li>
 				<li><a href="javascript:age()" class="button">Reset epsilon</a></li>
+
+				<li><a href="javascript:sizeroom(true)" class="button">Large room</a></li>
+				<li><a href="javascript:sizeroom()" class="button">Small room</a></li>
+
 			</ul>
 	    </p>
 		<p>
@@ -61,7 +65,8 @@ layer_defs.push({type:'regression', num_neurons:num_actions});
 
 // options for the Temporal Difference learner that trains the above net
 // by backpropping the temporal difference learning rule.
-var tdtrainer_options = {learning_rate:0.001, momentum:0.0, batch_size:64, l2_decay:0.01};
+var tdtrainer_options = {learning_rate:0.001, momentum:0.0, batch_size:64, l2_decay:0.1};
+// TODO: method: adadelta, ro, eps
 
 var opt = {};
 opt.behavior_policy = 'greedy';
@@ -100,7 +105,7 @@ layer_defs.push({type:'regression', num_neurons:num_actions});
 
 // options for the Temporal Difference learner that trains the above net
 // by backpropping the temporal difference learning rule.
-var tdtrainer_options = {learning_rate:0.001, momentum:0.0, batch_size:64, l2_decay:0.01};
+var tdtrainer_options = {learning_rate:0.001, momentum:0.0, batch_size:64, l2_decay:0.1};
 
 var opt = {};
 opt.behavior_policy = 'thompson';

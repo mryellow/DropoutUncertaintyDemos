@@ -113,10 +113,10 @@ var config = {
       this.cleanup_ = false;
     };
 
-    var World = function() {
+    var World = function(w, h) {
       this.agents = [];
-      this.W = canvas.width;
-      this.H = canvas.height;
+      this.W = w || canvas.width;
+      this.H = h || canvas.height;
 
       this.clock = 0;
 
@@ -135,6 +135,13 @@ var config = {
       this.items = [];
 
       this.goals = [];
+      for(var k=0;k<30;k++) {
+        var x = convnetjs.randf(20, this.W-20);
+        var y = convnetjs.randf(20, this.H-20);
+        var it = new Item(x, y, 0);
+        it.rad = 10;
+        this.goals.push(it);
+      }
     };
 
     World.prototype = {
@@ -211,6 +218,7 @@ var config = {
           // x/y reversed compared to Gazebo.
           // Find nearest nostril and apply goal
           //`tan(rad) = Opposite / Adjacent = (y2-y1)/(x2-x1)`
+          // FIXME: index must match agents.
           var srad = Math.atan2(this.goals[i].p.x - a.p.x, this.goals[i].p.y - a.p.y);
           //`Hypotenuse = (y2-y1)/sin(rad)`
           var sdis = Math.abs((this.goals[i].p.x - a.p.x)/Math.sin(srad));
@@ -334,6 +342,56 @@ var config = {
         }
         */
 
+        // tick all goals
+        var update_goals = false;
+        //for(i=0,n=this.goals.length;i<n;i++) {
+          // see if some agent gets lunch
+          for(var j=0,m=this.agents.length;j<m;j++) {
+            // FIXME: index must match agents
+            it = this.goals[j];
+            it.age += 1;
+
+            a = this.agents[j];
+            var d = a.p.dist_from(it.p);
+            if(d < it.rad + a.rad) {
+
+              // wait lets just make sure that this isn't through a wall
+              var rescheck = this.stuff_collide_(a.p, it.p, true, false);
+              if(!rescheck) {
+                // ding! nom nom nom
+                if(it.type === 0) a.digestion_signal += 1.0; // mmm delicious goal
+                it.cleanup_ = true;
+                update_goals = true;
+                break; // break out of loop, item was consumed
+              }
+            }
+
+            if(it.age > 5000 && this.clock % 100 === 0 && convnetjs.randf(0,1)<0.1) {
+              it.cleanup_ = true; // replace this one, has been around too long
+              update_goals = true;
+            }
+          }
+
+
+        //}
+        if(update_goals) {
+          var nt = [];
+          for(i=0,n=this.goals.length;i<n;i++) {
+            it = this.goals[i];
+            if(!it.cleanup_) nt.push(it);
+          }
+          this.goals = nt; // swap
+        }
+        if(this.goals.length < 30 && this.clock % 10 === 0 && convnetjs.randf(0,1)<0.25) {
+          // TODO: Only move a little if reached?
+          var newitx = convnetjs.randf(20, this.W-20);
+          var newity = convnetjs.randf(20, this.H-20);
+          var newit = new Item(newitx, newity, 0);
+          newit.rad = 10;
+          this.goals.push(newit);
+        }
+
+        /*
         if (this.clock % 500 === 0 && convnetjs.randf(0,1)<0.25) {
           // Re-init goals
           for(i=0,n=this.agents.length;i<n;i++) {
@@ -342,9 +400,10 @@ var config = {
                 convnetjs.randf(20, this.H-20),
                 0
             );
-            this.goals[i].rad = 15;
+            this.goals[i].rad = 10;
           }
         }
+        */
 
         // agents are given the opportunity to learn based on feedback of their action on environment
         for(i=0,n=this.agents.length;i<n;i++) {
@@ -668,7 +727,10 @@ var config = {
         }
 
         // detect reaching goal
-        if (this.goal && this.goal.dis < 0.02*this.sensors.nostrils[0].max_range) {
+        //if (this.goal && this.goal.dis < 0.015*this.sensors.nostrils[0].max_range) {
+        // `(w.goals[0].rad/2) + (w.agents[0].rad/2)`
+        /*
+        if (this.goal && this.goal.dis < 10) {
           console.log('Goal reached.', this.goal.dis.toFixed(3));
 
           // not available from mapping.
@@ -687,10 +749,11 @@ var config = {
                 y,
                 0
               );
-              w.goals[i].rad = 15;
+              w.goals[i].rad = 10;
             }
           }
         }
+        */
 
         // agents like to eat good things
         var digestion_reward = this.digestion_signal;
@@ -716,6 +779,20 @@ var config = {
         consistency that way [18]).
 
         // http://arxiv.org/pdf/1509.01549v1.pdf
+        */
+
+        /*
+        estimating the gradient of a black-box function at a point, based on perturbing
+        the function with gaussian noise. It turns out that the approach extends easily to learning
+        the gradient of a black-box function across its entire domain
+
+        The Gaussian noise plays two roles. Firstly, it controls the explore/exploit tradeoff by
+        controlling the extent to which Actor deviates from its current optimal policy. Secondly, it
+        controls the “resolution” at which Deviator estimates the gradient.
+
+        // http://arxiv.org/pdf/1509.03005.pdf
+
+        ...kinda like the Giraffe paper adding 1 move to the chess data...
         */
 
 
@@ -810,13 +887,16 @@ var config = {
         // draw goal
         ctx.fillStyle = "rgb(150, 150, 150)";
         ctx.strokeStyle = "rgb(150,150,150)";
+        // FIXME: index must match agents.
         var g = w.goals[i];
-        if(g.type === 1) ctx.fillStyle = "rgb(255, 150, 150)";
-        if(g.type === 2) ctx.fillStyle = "rgb(150, 255, 150)";
-        ctx.beginPath();
-        ctx.arc(g.p.x, g.p.y, g.rad, 0, Math.PI*2, true);
-        ctx.fill();
-        ctx.stroke();
+        if (g) {
+          if(g.type === 1) ctx.fillStyle = "rgb(255, 150, 150)";
+          if(g.type === 2) ctx.fillStyle = "rgb(150, 255, 150)";
+          ctx.beginPath();
+          ctx.arc(g.p.x, g.p.y, g.rad, 0, Math.PI*2, true);
+          ctx.fill();
+          ctx.stroke();
+        }
 
         // draw agents smell
         for(ei=0,ne=a.sensors.nostrils.length;ei<ne;ei++) {
@@ -920,7 +1000,8 @@ var config = {
       canvas = document.getElementById("canvas");
       ctx = canvas.getContext("2d");
 
-      w = new World();
+      // Start small
+      w = new World(250, 250*(canvas.height/canvas.width));
       w.agents = [
         new Agent(
           'thompson', 'rgb(0,0,255)',
@@ -937,14 +1018,16 @@ var config = {
       ];
 
       // Init goals
+      /*
       for(var i=0,n=w.agents.length;i<n;i++) {
         w.goals[i] = new Item(
             convnetjs.randf(20, w.W-20),
             convnetjs.randf(20, w.H-20),
             0
         );
-        w.goals[i].rad = 15;
+        w.goals[i].rad = 10;
       }
+      */
 
       reward_graph = new cnnvis.MultiGraph(['Thompson', 'Greedy'], {styles: ['rgb(0,0,255)', 'rgb(0,255,0)']});
       loss_graph   = new cnnvis.MultiGraph(['Thompson', 'Greedy'], {styles: ['rgb(0,0,255)', 'rgb(0,255,0)']});
@@ -966,6 +1049,21 @@ var config = {
       w.walls.pop();
       util_add_box(w.walls, 400, 100, 200, 300);
       w.walls.pop();
+    }
+
+    function sizeroom(larger) {
+      if (larger) {
+        w.W += w.W*0.1;
+        w.H += w.H*0.1;
+      } else {
+        w.W -= w.W*0.1;
+        w.H -= w.H*0.1;
+      }
+      w.W = Math.min(canvas.width, w.W);
+      w.H = Math.min(canvas.height, w.H);
+      w.walls = [];
+      var pad = 10;
+      util_add_box(w.walls, pad, pad, w.W-pad*2, w.H-pad*2);
     }
 
     function age() {
