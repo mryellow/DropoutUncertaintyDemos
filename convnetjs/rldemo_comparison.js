@@ -133,15 +133,6 @@ var config = {
 
       // set up food and poison
       this.items = [];
-
-      this.goals = [];
-      for(var k=0;k<30;k++) {
-        var x = convnetjs.randf(20, this.W-20);
-        var y = convnetjs.randf(20, this.H-20);
-        var it = new Item(x, y, 0);
-        it.rad = 10;
-        this.goals.push(it);
-      }
     };
 
     World.prototype = {
@@ -186,7 +177,7 @@ var config = {
         return minres;
       },
       tick: function() {
-        var a,i,n,it;
+        var a,d,i,j,n,it;
 
         // tick the environment
         this.clock++;
@@ -218,10 +209,9 @@ var config = {
           // x/y reversed compared to Gazebo.
           // Find nearest nostril and apply goal
           //`tan(rad) = Opposite / Adjacent = (y2-y1)/(x2-x1)`
-          // FIXME: index must match agents.
-          var srad = Math.atan2(this.goals[i].p.x - a.p.x, this.goals[i].p.y - a.p.y);
+          var srad = Math.atan2(a.goal.p.x - a.p.x, a.goal.p.y - a.p.y);
           //`Hypotenuse = (y2-y1)/sin(rad)`
-          var sdis = Math.abs((this.goals[i].p.x - a.p.x)/Math.sin(srad));
+          var sdis = Math.abs((a.goal.p.x - a.p.x)/Math.sin(srad));
 
           var robot_r = a.angle;
           if (robot_r > Math.PI) {
@@ -243,11 +233,12 @@ var config = {
           if (nostril && sdis < nostril.max_range) {
            // eye collided with wall
            nostril.sensed_proximity = sdis;
-           nostril.sensed_type = this.goals[i].type;
+           nostril.sensed_type = a.goal.type;
           }
 
           // Record for rewarding later.
-          a.addGoal(0, sdis, srad);
+          a.goal_rel.dis = sdis;
+          a.goal_rel.rad = srad;
         }
 
         // let the agents behave in the world based on their input
@@ -301,14 +292,13 @@ var config = {
           it.age += 1;
 
           // see if some agent gets lunch
-          for(var j=0,m=this.agents.length;j<m;j++) {
+          for(j=0,m=this.agents.length;j<m;j++) {
             a = this.agents[j];
-            var d = a.p.dist_from(it.p);
+            d = a.p.dist_from(it.p);
             if(d < it.rad + a.rad) {
 
               // wait lets just make sure that this isn't through a wall
-              var rescheck = this.stuff_collide_(a.p, it.p, true, false);
-              if(!rescheck) {
+              if(!this.stuff_collide_(a.p, it.p, true, false)) {
                 // ding! nom nom nom
                 if(it.type === 1) a.digestion_signal += 5.0; // mmm delicious apple
                 if(it.type === 2) a.digestion_signal += -6.0; // ewww poison
@@ -343,52 +333,39 @@ var config = {
         */
 
         // tick all goals
-        var update_goals = false;
-        //for(i=0,n=this.goals.length;i<n;i++) {
-          // see if some agent gets lunch
-          for(var j=0,m=this.agents.length;j<m;j++) {
-            // FIXME: index must match agents, green follows same, blue switches to greens and pushes it off
-            it = this.goals[j];
-            it.age += 1;
+        var update_goal = false;
+        // see if some agent gets lunch
+        for(j=0,m=this.agents.length;j<m;j++) {
+          a = this.agents[j];
+          it = a.goal;
+          it.age += 1;
 
-            a = this.agents[j];
-            var d = a.p.dist_from(it.p);
-            if(d < it.rad + a.rad) {
+          d = a.p.dist_from(it.p);
+          if(d < it.rad + a.rad) {
 
-              // wait lets just make sure that this isn't through a wall
-              var rescheck = this.stuff_collide_(a.p, it.p, true, false);
-              if(!rescheck) {
-                // ding! nom nom nom
-                if(it.type === 0) a.digestion_signal += 1.0; // mmm delicious goal
-                it.cleanup_ = true;
-                update_goals = true;
-                break; // break out of loop, item was consumed
-              }
-            }
-
-            if(it.age > 5000 && this.clock % 100 === 0 && convnetjs.randf(0,1)<0.1) {
-              it.cleanup_ = true; // replace this one, has been around too long
-              update_goals = true;
+            // wait lets just make sure that this isn't through a wall
+            if(!this.stuff_collide_(a.p, it.p, true, false)) {
+              // ding! nom nom nom
+              if(it.type === 0) a.digestion_signal += 1.0; // mmm delicious goal
+              it.cleanup_ = true;
+              update_goal = true;
+              break; // break out of loop, item was consumed
             }
           }
 
-
-        //}
-        if(update_goals) {
-          var nt = [];
-          for(i=0,n=this.goals.length;i<n;i++) {
-            it = this.goals[i];
-            if(!it.cleanup_) nt.push(it);
+          if(it.age > 5000 && this.clock % 100 === 0 && convnetjs.randf(0,1)<0.1) {
+            it.cleanup_ = true; // replace this one, has been around too long
+            update_goal = true;
           }
-          this.goals = nt; // swap
-        }
-        if(this.goals.length < 2) { // && this.clock % 10 === 0 && convnetjs.randf(0,1)<0.25) {
-          // TODO: Only move a little if reached?
-          var newitx = convnetjs.randf(20, this.W-20);
-          var newity = convnetjs.randf(20, this.H-20);
-          var newit = new Item(newitx, newity, 0);
-          newit.rad = 10;
-          this.goals.push(newit);
+
+          if(update_goal) {
+            // TODO: Only move a little if reached?
+            var newitx = convnetjs.randf(20, this.W-20);
+            var newity = convnetjs.randf(20, this.H-20);
+            var newit = new Item(newitx, newity, 0);
+            newit.rad = 10;
+            a.goal = newit;
+          }
         }
 
         // agents are given the opportunity to learn based on feedback of their action on environment
@@ -463,15 +440,6 @@ var config = {
       this.updated = false;
     };
 
-
-    // RatSLAM Goal log for rewarding distance.
-    var Goal = function(id, dis, rad) {
-      //console.log('Creating goal', id, dis, rad);
-      this.id  = id;
-      this.dis = dis;
-      this.rad = rad;
-    };
-
     /**
      * Initialise sensor positions.
      * @function
@@ -541,8 +509,12 @@ var config = {
        [0.0,4.0]
       ];
 
-      // Remember RatSLAM goals for rewarding distance.
-      this.goal = {};
+      // Remember goals for rewarding distance.
+      this.goal = null;
+      this.goal_rel = {
+        dis: 0,
+        rad: 0
+      };
 
       //this.brain = new deepqlearn.Brain(this.eyes.length * 3, this.actions.length);
       var spec;
@@ -566,18 +538,6 @@ var config = {
     };
 
     Agent.prototype = {
-      /**
-       * Add RatSLAM goal to memory for later reward
-       * @method addGoal
-       * @param {integer} id
-       * @param {float} dis
-       * @param {float} rad
-       */
-      addGoal: function(id, dis, rad) {
-        // TODO: If Goal ID has changed, publish an "eat" reward?
-        // Does it only change when eaten? Not really, it changes when shortcut too.
-        this.goal = new Goal(id, dis, rad);
-      },
       forward: function() {
         // in forward pass the agent simply behaves in the environment
         // create input to brain
@@ -617,9 +577,6 @@ var config = {
         // demultiplex into behavior variables
         this.rot1 = action[0]*1;
         this.rot2 = action[1]*1;
-
-        //this.rot1 = 0;
-        //this.rot2 = 0;
       },
       backward: function() {
         // in backward pass agent learns.
@@ -643,9 +600,9 @@ var config = {
         var goal_dis_factor = 0.0;
         var goal_rad_factor = 0.0;
         var goal_reward     = 0.0;
-        if (this.goal && this.goal.dis > 0 && this.goal.dis < this.sensors.nostrils[0].max_range) {
+        if (this.goal_rel.dis > 0 && this.goal_rel.dis < this.sensors.nostrils[0].max_range) {
            // Inversely proportional to distance.
-           goal_dis_factor = 1 - (1 / (this.sensors.nostrils[0].max_range / this.goal.dis));
+           goal_dis_factor = 1 - (1 / (this.sensors.nostrils[0].max_range / this.goal_rel.dis));
            // Proportional to the closeness to centre of view.
            //goal_rad_factor = jStat.normal.pdf(this.goal.rad, 0, 90*Math.PI/180);
            //goal_rad_factor = 0.0;
@@ -711,35 +668,6 @@ var config = {
           }
           */
         }
-
-        // detect reaching goal
-        //if (this.goal && this.goal.dis < 0.015*this.sensors.nostrils[0].max_range) {
-        // `(w.goals[0].rad/2) + (w.agents[0].rad/2)`
-        /*
-        if (this.goal && this.goal.dis < 10) {
-          console.log('Goal reached.', this.goal.dis.toFixed(3));
-
-          // not available from mapping.
-          this.digestion_signal += 1;
-
-          // Re-init goal
-          for(i=0,n=w.agents.length;i<n;i++) {
-            // Find matching goal index.
-            if (w.agents[i] === this) {
-              var og = w.goals[i];
-              // Just a little change from current position...
-              var x = Math.min(w.W-20, Math.max(20, convnetjs.randf(og.p.x-50, og.p.x+50)));
-              var y = Math.min(w.H-20, Math.max(20, convnetjs.randf(og.p.y-50, og.p.y+50)));
-              w.goals[i] = new Item(
-                x,
-                y,
-                0
-              );
-              w.goals[i].rad = 10;
-            }
-          }
-        }
-        */
 
         // agents like to eat good things
         var digestion_reward = this.digestion_signal;
@@ -871,11 +799,10 @@ var config = {
         }
 
         // draw goal
-        ctx.fillStyle = "rgb(150, 150, 150)";
-        ctx.strokeStyle = "rgb(150,150,150)";
-        // FIXME: index must match agents.
-        var g = w.goals[i];
+        var g = a.goal;
         if (g) {
+          ctx.fillStyle = "rgb(150, 150, 150)";
+          ctx.strokeStyle = "rgb(150,150,150)";
           if(g.type === 1) ctx.fillStyle = "rgb(255, 150, 150)";
           if(g.type === 2) ctx.fillStyle = "rgb(150, 255, 150)";
           ctx.beginPath();
@@ -1003,17 +930,14 @@ var config = {
         )
       ];
 
-      // Init goals
-      /*
       for(var i=0,n=w.agents.length;i<n;i++) {
-        w.goals[i] = new Item(
-            convnetjs.randf(20, w.W-20),
-            convnetjs.randf(20, w.H-20),
-            0
-        );
-        w.goals[i].rad = 10;
+        var a = w.agents[i];
+        var newitx = convnetjs.randf(20, w.W-20);
+        var newity = convnetjs.randf(20, w.H-20);
+        var newit = new Item(newitx, newity, 0);
+        newit.rad = 10;
+        a.goal = newit;
       }
-      */
 
       reward_graph = new cnnvis.MultiGraph(['Thompson', 'Greedy'], {styles: ['rgb(0,0,255)', 'rgb(0,255,0)']});
       loss_graph   = new cnnvis.MultiGraph(['Thompson', 'Greedy'], {styles: ['rgb(0,0,255)', 'rgb(0,255,0)']});
