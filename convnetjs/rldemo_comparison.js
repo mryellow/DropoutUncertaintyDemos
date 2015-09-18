@@ -346,19 +346,21 @@ var config = {
             // wait lets just make sure that this isn't through a wall
             if(!this.stuff_collide_(a.p, it.p, true, false)) {
               // ding! nom nom nom
+              console.log('nom nom nom');
               if(it.type === 0) a.digestion_signal += 1.0; // mmm delicious goal
               it.cleanup_ = true;
               update_goal = true;
-              break; // break out of loop, item was consumed
+              //break; // break out of loop, item was consumed
             }
           }
 
-          if(it.age > 5000 && this.clock % 100 === 0 && convnetjs.randf(0,1)<0.1) {
+          if(!update_goal && it.age > 5000 && this.clock % 100 === 0 && convnetjs.randf(0,1)<0.1) {
             it.cleanup_ = true; // replace this one, has been around too long
             update_goal = true;
           }
 
           if(update_goal) {
+            console.log('update_goal');
             // TODO: Only move a little if reached?
             var newitx = convnetjs.randf(20, this.W-20);
             var newity = convnetjs.randf(20, this.H-20);
