@@ -347,7 +347,7 @@ var config = {
         //for(i=0,n=this.goals.length;i<n;i++) {
           // see if some agent gets lunch
           for(var j=0,m=this.agents.length;j<m;j++) {
-            // FIXME: index must match agents
+            // FIXME: index must match agents, green follows same, blue switches to greens and pushes it off
             it = this.goals[j];
             it.age += 1;
 
